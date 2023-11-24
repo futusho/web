@@ -53,24 +53,99 @@ async function main() {
   await prisma.productCategory.create({
     data: {
       slug: 'ebooks',
-      title: 'eBooks',
-      description: 'From cutting-edge technology trends to in-depth tutorials',
+      title: 'eBooks and Reading Materials',
+      description:
+        'Explore a collection of digital books, including traditional eBooks, engaging audio books, and interactive eBooks that bring stories and information to life.',
     },
   })
 
   await prisma.productCategory.create({
     data: {
-      slug: 'website-templates',
-      title: 'Website Templates',
-      description: 'Premium templates for your website',
+      slug: 'notion',
+      title: 'Notion Templates',
+      description:
+        'Find ready-to-use templates for various purposes in Notion, from project management to eCommerce. Discover integrations and widgets to enhance your Notion workspace.',
     },
   })
 
   await prisma.productCategory.create({
     data: {
-      slug: 'online-courses',
-      title: 'Online Courses',
-      description: 'Offer digital products on various topics',
+      slug: 'wordpress',
+      title: 'WordPress Products',
+      description:
+        'Discover a range of WordPress solutions, including visually appealing themes, specialized plugins for added functionalities, and widget packs to customize your website effortlessly.',
+    },
+  })
+
+  await prisma.productCategory.create({
+    data: {
+      slug: 'design',
+      title: 'Design and Graphics',
+      description:
+        'Enhance your digital projects with a range of design assets, from icons and UI elements to stock photography, printable art, and graphics for social media.',
+    },
+  })
+
+  await prisma.productCategory.create({
+    data: {
+      slug: 'development',
+      title: 'Development and Coding',
+      description:
+        'Access essential tools for development, including code snippets and scripts, mobile app themes, and templates for web development projects.',
+    },
+  })
+
+  await prisma.productCategory.create({
+    data: {
+      slug: 'marketing',
+      title: 'Digital Marketing',
+      description:
+        'Improve your marketing efforts with email templates designed to engage, along with tools for marketing automation to simplify campaigns and communication.',
+    },
+  })
+
+  await prisma.productCategory.create({
+    data: {
+      slug: 'learning',
+      title: 'Learning and Education',
+      description:
+        'Invest in knowledge with online courses and learning materials covering various topics, from educational eBooks to language learning resources.',
+    },
+  })
+
+  await prisma.productCategory.create({
+    data: {
+      slug: 'productivity',
+      title: 'Productivity and Organization',
+      description:
+        'Stay organized and productive with printable planners and organizers, virtual goods for gaming with productivity features, and motivational content for personal growth.',
+    },
+  })
+
+  await prisma.productCategory.create({
+    data: {
+      slug: 'vr-and-ar',
+      title: 'Virtual and Augmented Reality',
+      description:
+        'Experience virtual reality content and augmented reality filters to enhance your digital reality.',
+    },
+  })
+
+  await prisma.productCategory.create({
+    data: {
+      slug: 'music-and-audio',
+      title: 'Music and Audio',
+      description:
+        'Dive into a world of sound with a collection of digital music and audio files, offering a variety of genres and styles.',
+    },
+  })
+
+  await prisma.productCategory.create({
+    data: {
+      slug: 'miscellaneous',
+      title: 'Miscellaneous',
+      description:
+        'Access a variety of content, from data and research reports to subscription services, consulting resources, virtual events and workshops.',
     },
   })
 }
