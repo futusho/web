@@ -1,0 +1,1 @@
+export { SalesTable } from './sales'

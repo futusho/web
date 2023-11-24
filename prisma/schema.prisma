@@ -1,0 +1,357 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                   String   @map("user_id") @db.Uuid
+  type                     String
+  provider                 String
+  providerAccountId        String   @map("provider_account_id")
+  refresh_token            String?  @db.Text
+  access_token             String?  @db.Text
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String?  @db.Text
+  session_state            String?
+  // NOTE: This field is required to use GitHub Provider
+  refresh_token_expires_in Int?
+  createdAt                DateTime @default(now()) @map(name: "created_at")
+  updatedAt                DateTime @default(now()) @map(name: "updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id") @db.Uuid
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id                            String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                          String?
+  email                         String?                        @unique
+  emailVerified                 DateTime?                      @map("email_verified")
+  image                         String?
+  username                      String                         @unique @default(dbgenerated("gen_random_uuid()"))
+  bio                           String?
+  createdAt                     DateTime                       @default(now()) @map(name: "created_at")
+  updatedAt                     DateTime                       @default(now()) @map(name: "updated_at")
+  accounts                      Account[]
+  sessions                      Session[]
+  sellerMarketplaces            SellerMarketplace[]
+  products                      Product[]
+  productOrders                 ProductOrder[]
+  productSales                  ProductSale[]
+  sellerMarketplaceTransactions SellerMarketplaceTransaction[]
+  sellerPayouts                 SellerPayout[]
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Network {
+  id                            String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title                         String
+  chainId                       Int                            @unique @map(name: "chain_id")
+  blockchainExplorerURL         String                         @map(name: "blockchain_explorer_url")
+  marketplaces                  NetworkMarketplace[]
+  sellerMarketplaces            SellerMarketplace[]
+  createdAt                     DateTime                       @default(now()) @map(name: "created_at")
+  updatedAt                     DateTime                       @updatedAt @map(name: "updated_at")
+  sellerMarketplaceTransactions SellerMarketplaceTransaction[]
+  buyerProductOrderTransactions ProductOrderTransaction[]
+  sellerPayoutTransactions      SellerPayoutTransaction[]
+
+  @@map("networks")
+}
+
+model NetworkMarketplace {
+  id                   String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  networkId            String                    @map(name: "network_id") @db.Uuid
+  network              Network                   @relation(fields: [networkId], references: [id], onDelete: Cascade)
+  smartContractAddress String                    @map(name: "smart_contract_address")
+  commissionRate       Int                       @default(0) @map(name: "commission_rate")
+  tokens               NetworkMarketplaceToken[]
+  sellerMarketplaces   SellerMarketplace[]
+  createdAt            DateTime                  @default(now()) @map(name: "created_at")
+  updatedAt            DateTime                  @updatedAt @map(name: "updated_at")
+
+  @@unique([networkId, smartContractAddress])
+  @@map("network_marketplaces")
+}
+
+// TODO: Add `name` which represents a human-readable tokens name, like DAI, Tether, USD Coin, etc.
+// TODO: Add token icon URL
+model NetworkMarketplaceToken {
+  id                      String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  marketplaceId           String                   @map(name: "marketplace_id") @db.Uuid
+  marketplace             NetworkMarketplace       @relation(fields: [marketplaceId], references: [id], onDelete: Cascade)
+  decimals                Int
+  // If it's null, then it is a coin, not a token
+  smartContractAddress    String?                  @map(name: "smart_contract_address")
+  symbol                  String
+  sellerMarketplaceTokens SellerMarketplaceToken[]
+  createdAt               DateTime                 @default(now()) @map(name: "created_at")
+  updatedAt               DateTime                 @updatedAt @map(name: "updated_at")
+
+  @@unique([marketplaceId, smartContractAddress])
+  @@map("network_marketplace_tokens")
+}
+
+model SellerMarketplace {
+  id                            String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sellerId                      String                         @map(name: "seller_id") @db.Uuid
+  seller                        User                           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  networkId                     String                         @map(name: "network_id") @db.Uuid
+  network                       Network                        @relation(fields: [networkId], references: [id], onDelete: Cascade)
+  networkMarketplaceId          String                         @map(name: "network_marketplace_id") @db.Uuid
+  networkMarketplace            NetworkMarketplace             @relation(fields: [networkMarketplaceId], references: [id], onDelete: Cascade)
+  smartContractAddress          String                         @map(name: "smart_contract_address")
+  ownerWalletAddress            String                         @map(name: "owner_wallet_address")
+  tokens                        SellerMarketplaceToken[]
+  productOrders                 ProductOrder[]
+  productSales                  ProductSale[]
+  createdAt                     DateTime                       @default(now()) @map(name: "created_at")
+  updatedAt                     DateTime                       @updatedAt @map(name: "updated_at")
+  pendingAt                     DateTime?                      @map(name: "pending_at")
+  confirmedAt                   DateTime?                      @map(name: "confirmed_at")
+  sellerMarketplaceTransactions SellerMarketplaceTransaction[]
+  sellerPayouts                 SellerPayout[]
+
+  // FIXME: Should I prevent sellers to have multiple marketplace in one network marketplace?
+  // @@unique([sellerId, networkMarketplaceId])
+  @@index([smartContractAddress])
+  @@map("seller_marketplaces")
+}
+
+model SellerMarketplaceToken {
+  id                        String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sellerMarketplaceId       String                  @map(name: "seller_marketplace_id") @db.Uuid
+  sellerMarketplace         SellerMarketplace       @relation(fields: [sellerMarketplaceId], references: [id], onDelete: Cascade)
+  networkMarketplaceTokenId String                  @map(name: "network_marketplace_token_id") @db.Uuid
+  networkMarketplaceToken   NetworkMarketplaceToken @relation(fields: [networkMarketplaceTokenId], references: [id], onDelete: Cascade)
+  products                  Product[]
+  productOrders             ProductOrder[]
+  productSales              ProductSale[]
+  sellerPayouts             SellerPayout[]
+  createdAt                 DateTime                @default(now()) @map(name: "created_at")
+  updatedAt                 DateTime                @updatedAt @map(name: "updated_at")
+
+  @@unique([sellerMarketplaceId, networkMarketplaceTokenId])
+  @@map("seller_marketplace_tokens")
+}
+
+model SellerMarketplaceTransaction {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sellerId            String            @map(name: "seller_id") @db.Uuid
+  seller              User              @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  hash                String            @unique @map(name: "hash")
+  sellerMarketplaceId String            @map(name: "seller_marketplace_id") @db.Uuid
+  sellerMarketplace   SellerMarketplace @relation(fields: [sellerMarketplaceId], references: [id], onDelete: Cascade)
+  networkId           String            @map(name: "network_id") @db.Uuid
+  network             Network           @relation(fields: [networkId], references: [id], onDelete: Cascade)
+  createdAt           DateTime          @default(now()) @map(name: "created_at")
+  confirmedAt         DateTime?         @map(name: "confirmed_at")
+  failedAt            DateTime?         @map(name: "failed_at")
+  updatedAt           DateTime          @updatedAt @map(name: "updated_at")
+  // The following four fields are populated from the blockchain response
+  senderAddress       String            @default("") @map(name: "sender_address")
+  // used amount of gas
+  gas                 Int               @default(0)
+  // gasFee from BitQuery
+  transactionFee      String            @default("") @map(name: "transaction_fee")
+  blockchainError     String            @default("") @map(name: "blockchain_error")
+
+  @@unique([networkId, hash])
+  @@map("seller_marketplace_transactions")
+}
+
+model Product {
+  id                       String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug                     String
+  price                    Decimal                @db.Decimal(28, 18)
+  priceDecimals            Int                    @map(name: "price_decimals")
+  priceFormatted           String                 @map(name: "price_formatted")
+  title                    String
+  description              String                 @default("")
+  content                  String                 @default("")
+  sellerId                 String                 @map(name: "seller_id") @db.Uuid
+  seller                   User                   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  sellerMarketplaceTokenId String                 @map(name: "seller_marketplace_token_id") @db.Uuid
+  sellerMarketplaceToken   SellerMarketplaceToken @relation(fields: [sellerMarketplaceTokenId], references: [id], onDelete: Cascade)
+  createdAt                DateTime               @default(now()) @map(name: "created_at")
+  updatedAt                DateTime               @updatedAt @map(name: "updated_at")
+  publishedAt              DateTime?              @map(name: "published_at")
+  attributes               Json?
+  categoryId               String                 @map(name: "category_id") @db.Uuid
+  category                 ProductCategory        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  productImages            ProductImage[]
+  productOrders            ProductOrder[]
+  productSales             ProductSale[]
+
+  @@unique([sellerId, slug])
+  @@map("products")
+}
+
+model ProductCategory {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug        String    @unique
+  title       String
+  description String
+  createdAt   DateTime  @default(now()) @map(name: "created_at")
+  updatedAt   DateTime  @updatedAt @map(name: "updated_at")
+  products    Product[]
+
+  @@map("product_categories")
+}
+
+model ProductImage {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type      String // Thumbnail or Cover
+  url       String
+  productId String   @map(name: "product_id") @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map(name: "created_at")
+
+  @@map("product_images")
+}
+
+model ProductOrder {
+  id                       String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  price                    Decimal                   @db.Decimal(28, 18)
+  priceDecimals            Int                       @map(name: "price_decimals")
+  priceFormatted           String                    @map(name: "price_formatted")
+  buyerId                  String                    @map(name: "buyer_id") @db.Uuid
+  buyer                    User                      @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  productId                String                    @map(name: "product_id") @db.Uuid
+  product                  Product                   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sellerMarketplaceId      String                    @map(name: "seller_marketplace_id") @db.Uuid
+  sellerMarketplace        SellerMarketplace         @relation(fields: [sellerMarketplaceId], references: [id], onDelete: Cascade)
+  sellerMarketplaceTokenId String                    @map(name: "seller_marketplace_token_id") @db.Uuid
+  sellerMarketplaceToken   SellerMarketplaceToken    @relation(fields: [sellerMarketplaceTokenId], references: [id], onDelete: Cascade)
+  sellerWalletAddress      String                    @map(name: "seller_wallet_address")
+  transactions             ProductOrderTransaction[]
+  createdAt                DateTime                  @default(now()) @map(name: "created_at")
+  updatedAt                DateTime                  @updatedAt @map(name: "updated_at")
+  pendingAt                DateTime?                 @map(name: "pending_at")
+  confirmedAt              DateTime?                 @map(name: "confirmed_at")
+  cancelledAt              DateTime?                 @map(name: "cancelled_at")
+  refundedAt               DateTime?                 @map(name: "refunded_at")
+
+  @@map("product_orders")
+}
+
+model ProductOrderTransaction {
+  id                 String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hash               String       @unique @map(name: "hash")
+  productOrderId     String       @map(name: "product_order_id") @db.Uuid
+  productOrder       ProductOrder @relation(fields: [productOrderId], references: [id], onDelete: Cascade)
+  networkId          String       @map(name: "network_id") @db.Uuid
+  network            Network      @relation(fields: [networkId], references: [id], onDelete: Cascade)
+  createdAt          DateTime     @default(now()) @map(name: "created_at")
+  confirmedAt        DateTime?    @map(name: "confirmed_at")
+  failedAt           DateTime?    @map(name: "failed_at")
+  updatedAt          DateTime     @updatedAt @map(name: "updated_at")
+  // The following four fields are populated from the blockchain response
+  buyerWalletAddress String       @default("") @map(name: "buyer_wallet_address")
+  // used amount of gas from BitQuery
+  gas                Int          @default(0)
+  // gasFee from BitQuery
+  transactionFee     String       @default("") @map(name: "transaction_fee")
+  blockchainError    String       @default("") @map(name: "blockchain_error")
+  // FIXME: Who do I need this?
+  productSale        ProductSale?
+
+  @@unique([networkId, hash])
+  @@map("product_order_transactions")
+}
+
+model ProductSale {
+  id                        String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sellerId                  String                  @map(name: "seller_id") @db.Uuid
+  seller                    User                    @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  productId                 String                  @map(name: "product_id") @db.Uuid
+  product                   Product                 @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sellerMarketplaceId       String                  @map(name: "seller_marketplace_id") @db.Uuid
+  sellerMarketplace         SellerMarketplace       @relation(fields: [sellerMarketplaceId], references: [id], onDelete: Cascade)
+  sellerMarketplaceTokenId  String                  @map(name: "seller_marketplace_token_id") @db.Uuid
+  sellerMarketplaceToken    SellerMarketplaceToken  @relation(fields: [sellerMarketplaceTokenId], references: [id], onDelete: Cascade)
+  productOrderTransactionId String                  @unique @map(name: "product_order_transaction_id") @db.Uuid
+  productOrderTransaction   ProductOrderTransaction @relation(fields: [productOrderTransactionId], references: [id], onDelete: Cascade)
+  sellerIncome              Decimal                 @map(name: "seller_income") @db.Decimal(28, 18)
+  sellerIncomeFormatted     String                  @map(name: "seller_income_formatted")
+  platformIncome            Decimal                 @map(name: "platform_income") @db.Decimal(28, 18)
+  platformIncomeFormatted   String                  @map(name: "platform_income_formatted")
+  decimals                  Int
+  createdAt                 DateTime                @default(now()) @map(name: "created_at")
+  updatedAt                 DateTime                @updatedAt @map(name: "updated_at")
+
+  @@map("product_sales")
+}
+
+model SellerPayout {
+  id                       String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sellerId                 String                    @map(name: "seller_id") @db.Uuid
+  seller                   User                      @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  sellerMarketplaceId      String                    @map(name: "seller_marketplace_id") @db.Uuid
+  sellerMarketplace        SellerMarketplace         @relation(fields: [sellerMarketplaceId], references: [id], onDelete: Cascade)
+  sellerMarketplaceTokenId String                    @map(name: "seller_marketplace_token_id") @db.Uuid
+  sellerMarketplaceToken   SellerMarketplaceToken    @relation(fields: [sellerMarketplaceTokenId], references: [id], onDelete: Cascade)
+  amount                   Decimal                   @db.Decimal(28, 18)
+  amountFormatted          String                    @map(name: "amount_formatted")
+  decimals                 Int
+  createdAt                DateTime                  @default(now()) @map(name: "created_at")
+  updatedAt                DateTime                  @updatedAt @map(name: "updated_at")
+  pendingAt                DateTime?                 @map(name: "pending_at")
+  confirmedAt              DateTime?                 @map(name: "confirmed_at")
+  cancelledAt              DateTime?                 @map(name: "cancelled_at")
+  transactions             SellerPayoutTransaction[]
+
+  @@map("seller_payouts")
+}
+
+model SellerPayoutTransaction {
+  id                 String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hash               String       @unique @map(name: "hash")
+  sellerPayoutId     String       @map(name: "seller_payout_id") @db.Uuid
+  sellerPayout       SellerPayout @relation(fields: [sellerPayoutId], references: [id], onDelete: Cascade)
+  networkId          String       @map(name: "network_id") @db.Uuid
+  network            Network      @relation(fields: [networkId], references: [id], onDelete: Cascade)
+  createdAt          DateTime     @default(now()) @map(name: "created_at")
+  confirmedAt        DateTime?    @map(name: "confirmed_at")
+  failedAt           DateTime?    @map(name: "failed_at")
+  updatedAt          DateTime     @updatedAt @map(name: "updated_at")
+  // The following four fields are populated from the blockchain response
+  ownerWalletAddress String       @default("") @map(name: "owner_wallet_address")
+  // used amount of gas from BitQuery
+  gas                Int          @default(0)
+  // gasFee from BitQuery
+  transactionFee     String       @default("") @map(name: "transaction_fee")
+  blockchainError    String       @default("") @map(name: "blockchain_error")
+
+  @@unique([networkId, hash])
+  @@map("seller_payout_transactions")
+}

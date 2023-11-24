@@ -1,0 +1,1 @@
+export { MarketplacesTable } from './marketplaces'

@@ -1,0 +1,16 @@
+Dockerfile
+.dockerignore
+node_modules
+npm-debug.log
+README.md
+.next
+out
+coverage
+__tests__
+.data
+.git
+.github
+/**/__mocks__/*
+/public/uploads/
+!/public/uploads/.keep
+.env*
