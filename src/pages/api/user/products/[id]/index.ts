@@ -1,3 +1,4 @@
+import * as crypto from 'crypto'
 import path from 'path'
 import multer from 'multer'
 import getConfig from 'next/config'
@@ -72,9 +73,20 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const productId = req.query.id as string
 
-    const uniqueSuffix = Date.now() + path.extname(file.originalname)
+    // Generate a unique filename based on the current timestamp, file type
+    // (cover or thumbnail), and a hash of the original filename. This ensures
+    // avoidance of overwriting existing files and handles cases where a user
+    // uploads the same file for cover and thumbnail simultaneously.
 
-    cb(null, `product-${productId}-${uniqueSuffix}`)
+    const hash = crypto
+      .createHash('md5')
+      .update(file.originalname)
+      .digest('hex')
+
+    const uniqueSuffix =
+      Date.now() + '-' + hash + path.extname(file.originalname)
+
+    cb(null, `product-${productId}-${file.fieldname}-${uniqueSuffix}`)
   },
 })
 

@@ -1,3 +1,4 @@
+import * as crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import cookieParser from 'cookie-parser'
@@ -322,8 +323,17 @@ describe(`PUT ${ENDPOINT}`, () => {
             expect(productCoverImages).toHaveLength(1)
             expect(
               productCoverImages[0].url.startsWith(
-                `http://localhost:3000/uploads/product-${product.id}`
+                `http://localhost:3000/uploads/product-${product.id}-covers-`
               )
+            ).toBeTruthy()
+
+            const coverHash = crypto
+              .createHash('md5')
+              .update('cover.png')
+              .digest('hex')
+
+            expect(
+              productCoverImages[0].url.endsWith(`-${coverHash}.png`)
             ).toBeTruthy()
 
             const productThumbnailImages = await prisma.productImage.findMany({
@@ -336,8 +346,17 @@ describe(`PUT ${ENDPOINT}`, () => {
             expect(productThumbnailImages).toHaveLength(1)
             expect(
               productThumbnailImages[0].url.startsWith(
-                `http://localhost:3000/uploads/product-${product.id}`
+                `http://localhost:3000/uploads/product-${product.id}-thumbnails-`
               )
+            ).toBeTruthy()
+
+            const thumbnailHash = crypto
+              .createHash('md5')
+              .update('thumbnail.png')
+              .digest('hex')
+
+            expect(
+              productThumbnailImages[0].url.endsWith(`-${thumbnailHash}.png`)
             ).toBeTruthy()
           })
         })
