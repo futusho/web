@@ -3,7 +3,9 @@ import { useSession } from 'next-auth/react'
 import React from 'react'
 import { useHasMounted } from '@/hooks'
 import { authOptions } from '@/lib/auth'
-import { NewProductScreen } from '@/screens/user'
+import { captureServerPageError } from '@/lib/serverPageErrors'
+import type { ServerPageErrors } from '@/lib/serverPageErrors'
+import { ErrorScreen, LoadingScreen, NewProductScreen } from '@/screens/user'
 import type {
   ProductCategory,
   UserMarketplaceToken,
@@ -12,10 +14,9 @@ import { getProductCategories } from '@/useCases/getProductCategories'
 import { getUserMarketplaceTokens } from '@/useCases/getUserMarketplaceTokens'
 import type { InferGetServerSidePropsType, GetServerSideProps } from 'next'
 
-type Repo = {
+type Repo = ServerPageErrors & {
   tokens?: UserMarketplaceToken[]
   productCategories?: ProductCategory[]
-  errorMessage?: string
 }
 
 export const getServerSideProps: GetServerSideProps<{
@@ -38,14 +39,16 @@ export const getServerSideProps: GetServerSideProps<{
     })
     const productCategories = await getProductCategories()
 
-    const options = {
-      tokens: tokens,
-      productCategories: productCategories,
+    return {
+      props: {
+        repo: {
+          tokens,
+          productCategories,
+        },
+      },
     }
-
-    return { props: { repo: { ...options } } }
   } catch (e) {
-    return { props: { repo: { errorMessage: `${e}` } } }
+    return { props: { repo: captureServerPageError(e) } }
   }
 }
 
@@ -56,20 +59,31 @@ export default function Page({
 
   const hasMounted = useHasMounted()
 
+  if (repo.useCaseErrors) {
+    return (
+      <ErrorScreen error="Internal Server Error" errors={repo.useCaseErrors} />
+    )
+  }
+
   if (repo.errorMessage) {
-    return <p>{repo.errorMessage}</p>
+    return <ErrorScreen error="Error" description={repo.errorMessage} />
   }
 
-  if (!repo.tokens) {
-    return <p>No tokens yet</p>
+  if (!Array.isArray(repo.tokens)) {
+    return <ErrorScreen error="Error" description="Unable to load tokens" />
   }
 
-  if (!repo.productCategories) {
-    return <p>No categories yet</p>
+  if (!Array.isArray(repo.productCategories)) {
+    return (
+      <ErrorScreen
+        error="Error"
+        description="Unable to load product categories"
+      />
+    )
   }
 
   if (!hasMounted) {
-    return <p>Loading...</p>
+    return <LoadingScreen />
   }
 
   return (

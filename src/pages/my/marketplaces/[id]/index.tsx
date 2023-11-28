@@ -3,11 +3,15 @@ import { useSession } from 'next-auth/react'
 import React from 'react'
 import { useHasMounted } from '@/hooks'
 import { authOptions } from '@/lib/auth'
+import { captureServerPageError } from '@/lib/serverPageErrors'
+import type { ServerPageErrors } from '@/lib/serverPageErrors'
 import {
+  ErrorScreen,
+  LoadingScreen,
   ConfirmedMarketplaceScreen,
   DraftMarketplaceScreen,
   UnconfirmedMarketplaceScreen,
-} from '@/screens/user/marketplaces'
+} from '@/screens/user'
 import type {
   ConfirmedMarketplace,
   DraftMarketplace,
@@ -17,9 +21,8 @@ import type {
 import { getUserMarketplaceBasedOnStatus } from '@/useCases/getUserMarketplaceBasedOnStatus'
 import type { InferGetServerSidePropsType, GetServerSideProps } from 'next'
 
-type Repo = {
+type Repo = ServerPageErrors & {
   marketplace?: UserMarketplace
-  errorMessage?: string
 }
 
 const isDraftMarketplace = (
@@ -75,7 +78,7 @@ export const getServerSideProps: GetServerSideProps<{
       },
     }
   } catch (e) {
-    return { props: { repo: { errorMessage: `${e}` } } }
+    return { props: { repo: captureServerPageError(e) } }
   }
 }
 
@@ -86,16 +89,24 @@ export default function Page({
 
   const hasMounted = useHasMounted()
 
+  if (repo.useCaseErrors) {
+    return (
+      <ErrorScreen error="Internal Server Error" errors={repo.useCaseErrors} />
+    )
+  }
+
   if (repo.errorMessage) {
-    return <p>{repo.errorMessage}</p>
+    return <ErrorScreen error="Error" description={repo.errorMessage} />
   }
 
   if (!repo.marketplace) {
-    return <p>No marketplace in response</p>
+    return (
+      <ErrorScreen error="Error" description="Unable to load marketplace" />
+    )
   }
 
   if (!hasMounted) {
-    return <p>Loading...</p>
+    return <LoadingScreen />
   }
 
   if (isConfirmedMarketplace(repo.marketplace)) {
@@ -110,5 +121,10 @@ export default function Page({
     return <DraftMarketplaceScreen marketplace={repo.marketplace} />
   }
 
-  return <p>Unknown marketplace</p>
+  return (
+    <ErrorScreen
+      error="Please contact our team"
+      description="Unsupported marketplace"
+    />
+  )
 }

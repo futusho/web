@@ -3,14 +3,15 @@ import { useSession } from 'next-auth/react'
 import React from 'react'
 import { useHasMounted } from '@/hooks'
 import { authOptions } from '@/lib/auth'
-import { ProductsScreen } from '@/screens/user'
+import { captureServerPageError } from '@/lib/serverPageErrors'
+import type { ServerPageErrors } from '@/lib/serverPageErrors'
+import { ErrorScreen, LoadingScreen, ProductsScreen } from '@/screens/user'
 import type { UserProductItem } from '@/types/user-products'
 import { getUserProducts } from '@/useCases/getUserProducts'
 import type { InferGetServerSidePropsType, GetServerSideProps } from 'next'
 
-type Repo = {
+type Repo = ServerPageErrors & {
   products?: UserProductItem[]
-  errorMessage?: string
 }
 
 export const getServerSideProps: GetServerSideProps<{
@@ -32,7 +33,7 @@ export const getServerSideProps: GetServerSideProps<{
 
     return { props: { repo: { products } } }
   } catch (e) {
-    return { props: { repo: { errorMessage: `${e}` } } }
+    return { props: { repo: captureServerPageError(e) } }
   }
 }
 
@@ -43,16 +44,22 @@ export default function Page({
 
   const hasMounted = useHasMounted()
 
-  if (repo.errorMessage) {
-    return <p>{repo.errorMessage}</p>
+  if (repo.useCaseErrors) {
+    return (
+      <ErrorScreen error="Internal Server Error" errors={repo.useCaseErrors} />
+    )
   }
 
-  if (typeof repo.products === 'undefined') {
-    return <p>Invalid products</p>
+  if (repo.errorMessage) {
+    return <ErrorScreen error="Error" description={repo.errorMessage} />
+  }
+
+  if (!Array.isArray(repo.products)) {
+    return <ErrorScreen error="Error" description="Unable to load products" />
   }
 
   if (!hasMounted) {
-    return <p>Loading...</p>
+    return <LoadingScreen />
   }
 
   return <ProductsScreen products={repo.products} />
