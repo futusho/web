@@ -71,7 +71,8 @@ export const captureAPIError = async (e: unknown, res: NextApiResponse) => {
       success: false,
       errors: e.errors,
     })
-    return res.end()
+    res.end()
+    return
   }
 
   if (e instanceof UseCaseValidationError) {
@@ -80,7 +81,8 @@ export const captureAPIError = async (e: unknown, res: NextApiResponse) => {
       success: false,
       errors: e.errors,
     })
-    return res.end()
+    res.end()
+    return
   }
 
   if (e instanceof ConflictError) {
@@ -89,7 +91,8 @@ export const captureAPIError = async (e: unknown, res: NextApiResponse) => {
       success: false,
       message: e.message,
     })
-    return res.end()
+    res.end()
+    return
   }
 
   if (e instanceof ClientError) {
@@ -98,7 +101,8 @@ export const captureAPIError = async (e: unknown, res: NextApiResponse) => {
       success: false,
       message: e.message,
     })
-    return res.end()
+    res.end()
+    return
   }
 
   if (e instanceof InternalServerError) {
@@ -107,7 +111,8 @@ export const captureAPIError = async (e: unknown, res: NextApiResponse) => {
       success: false,
       message: e.message,
     })
-    return res.end()
+    res.end()
+    return
   }
 
   res.status(500)
@@ -126,5 +131,5 @@ export const captureAPIError = async (e: unknown, res: NextApiResponse) => {
     res.json({ success: false, ...UNHANDLED_ERROR })
   }
 
-  return res.end()
+  res.end()
 }
