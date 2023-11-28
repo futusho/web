@@ -30,7 +30,7 @@
     "mobile-detect": "^1.4.5",
     "multer": "^1.4.5-lts.1",
     "next": "^13.5.1",
-    "next-auth": "^4.22.1",
+    "next-auth": "^4.24.5",
     "next-connect": "^1.0.0",
     "node-fetch": "^3.3.1",
     "nodemailer": "^6.9.7",
