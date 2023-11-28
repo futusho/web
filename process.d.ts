@@ -22,5 +22,9 @@ declare namespace NodeJS {
     BINANCE_ACCOUNT_PRIVATE_KEY: string
     // ETHEREUM_ACCOUNT_PRIVATE_KEY: string
     // POLYGON_ACCOUNT_PRIVATE_KEY: string
+
+    SENTRY_DSN: string
+    SENTRY_ORG: string
+    SENTRY_PROJECT: string
   }
 }
