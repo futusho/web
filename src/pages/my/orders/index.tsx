@@ -3,14 +3,15 @@ import { useSession } from 'next-auth/react'
 import React from 'react'
 import { useHasMounted } from '@/hooks'
 import { authOptions } from '@/lib/auth'
-import { OrdersScreen } from '@/screens/user'
+import { captureServerPageError } from '@/lib/serverPageErrors'
+import type { ServerPageErrors } from '@/lib/serverPageErrors'
+import { ErrorScreen, LoadingScreen, OrdersScreen } from '@/screens/user'
 import type { UserProductOrderItem } from '@/types/user-orders'
 import { getUserProductOrders } from '@/useCases/getUserProductOrders'
 import type { InferGetServerSidePropsType, GetServerSideProps } from 'next'
 
-type Repo = {
+type Repo = ServerPageErrors & {
   orders?: UserProductOrderItem[]
-  errorMessage?: string
 }
 
 export const getServerSideProps: GetServerSideProps<{
@@ -34,7 +35,7 @@ export const getServerSideProps: GetServerSideProps<{
 
     return { props: { repo: { orders } } }
   } catch (e) {
-    return { props: { repo: { errorMessage: `${e}` } } }
+    return { props: { repo: captureServerPageError(e) } }
   }
 }
 
@@ -45,16 +46,22 @@ export default function Page({
 
   const hasMounted = useHasMounted()
 
-  if (repo.errorMessage) {
-    return <p>{repo.errorMessage}</p>
+  if (repo.useCaseErrors) {
+    return (
+      <ErrorScreen error="Internal Server Error" errors={repo.useCaseErrors} />
+    )
   }
 
-  if (typeof repo.orders === 'undefined') {
-    return <p>Unable to get user product orders</p>
+  if (repo.errorMessage) {
+    return <ErrorScreen error="Error" description={repo.errorMessage} />
+  }
+
+  if (!Array.isArray(repo.orders)) {
+    return <ErrorScreen error="Error" description="Unable to load orders" />
   }
 
   if (!hasMounted) {
-    return <p>Loading...</p>
+    return <LoadingScreen />
   }
 
   return <OrdersScreen orders={repo.orders} />

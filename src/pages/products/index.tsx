@@ -1,13 +1,18 @@
 import React from 'react'
 import { useHasMounted } from '@/hooks'
-import { MarketplaceProductCategories } from '@/screens/marketplace'
+import { captureServerPageError } from '@/lib/serverPageErrors'
+import type { ServerPageErrors } from '@/lib/serverPageErrors'
+import {
+  ErrorScreen,
+  LoadingScreen,
+  MarketplaceProductCategories,
+} from '@/screens/marketplace'
 import type { ProductCategoryItem } from '@/types/marketplace-product-categories'
 import { getProductCategoriesForMarketplace } from '@/useCases/getProductCategoriesForMarketplace'
 import type { InferGetServerSidePropsType, GetServerSideProps } from 'next'
 
-type Repo = {
+type Repo = ServerPageErrors & {
   productCategories?: ProductCategoryItem[]
-  errorMessage?: string
 }
 
 export const getServerSideProps: GetServerSideProps<{
@@ -18,7 +23,7 @@ export const getServerSideProps: GetServerSideProps<{
 
     return { props: { repo: { productCategories } } }
   } catch (e) {
-    return { props: { repo: { errorMessage: `${e}` } } }
+    return { props: { repo: captureServerPageError(e) } }
   }
 }
 
@@ -27,16 +32,22 @@ export default function Page({
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const hasMounted = useHasMounted()
 
-  if (repo.errorMessage) {
-    return <p>{repo.errorMessage}</p>
+  if (repo.useCaseErrors) {
+    return (
+      <ErrorScreen error="Internal Server Error" errors={repo.useCaseErrors} />
+    )
   }
 
-  if (typeof repo.productCategories === 'undefined') {
-    return <p>Unable to get product categories</p>
+  if (repo.errorMessage) {
+    return <ErrorScreen error="Error" description={repo.errorMessage} />
+  }
+
+  if (!Array.isArray(repo.productCategories)) {
+    return <ErrorScreen error="Error" description="Unable to load categories" />
   }
 
   if (!hasMounted) {
-    return <p>Loading...</p>
+    return <LoadingScreen />
   }
 
   return <MarketplaceProductCategories categories={repo.productCategories} />

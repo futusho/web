@@ -1,14 +1,19 @@
 import React from 'react'
 import { useHasMounted } from '@/hooks'
-import { SellerMarketplaceProductScreen } from '@/screens/seller-marketplace'
+import { captureServerPageError } from '@/lib/serverPageErrors'
+import type { ServerPageErrors } from '@/lib/serverPageErrors'
+import {
+  ErrorScreen,
+  LoadingScreen,
+  SellerMarketplaceProductScreen,
+} from '@/screens/seller-marketplace'
 import type { ProductDetails, SellerDetails } from '@/types/seller-marketplace'
 import { getSellerProductShowcase } from '@/useCases/getSellerProductShowcase'
 import type { InferGetServerSidePropsType, GetServerSideProps } from 'next'
 
-type Repo = {
+type Repo = ServerPageErrors & {
   product?: ProductDetails
   seller?: SellerDetails
-  errorMessage?: string
 }
 
 export const getServerSideProps: GetServerSideProps<{
@@ -35,7 +40,7 @@ export const getServerSideProps: GetServerSideProps<{
       },
     }
   } catch (e) {
-    return { props: { repo: { errorMessage: `${e}` } } }
+    return { props: { repo: captureServerPageError(e) } }
   }
 }
 
@@ -44,20 +49,26 @@ export default function Page({
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const hasMounted = useHasMounted()
 
+  if (repo.useCaseErrors) {
+    return (
+      <ErrorScreen error="Internal Server Error" errors={repo.useCaseErrors} />
+    )
+  }
+
   if (repo.errorMessage) {
-    return <p>{repo.errorMessage}</p>
+    return <ErrorScreen error="Error" description={repo.errorMessage} />
   }
 
   if (!repo.product) {
-    return <p>Unable to get product showcase</p>
+    return <ErrorScreen error="Error" description="No product in a response" />
   }
 
   if (!repo.seller) {
-    return <p>Unable to get seller</p>
+    return <ErrorScreen error="Error" description="No seller in a response" />
   }
 
   if (!hasMounted) {
-    return <p>Loading...</p>
+    return <LoadingScreen />
   }
 
   return (

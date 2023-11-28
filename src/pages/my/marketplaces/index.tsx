@@ -3,7 +3,9 @@ import { useSession } from 'next-auth/react'
 import React from 'react'
 import { useHasMounted } from '@/hooks'
 import { authOptions } from '@/lib/auth'
-import { MarketplacesScreen } from '@/screens/user/marketplaces'
+import { captureServerPageError } from '@/lib/serverPageErrors'
+import type { ServerPageErrors } from '@/lib/serverPageErrors'
+import { ErrorScreen, LoadingScreen, MarketplacesScreen } from '@/screens/user'
 import type {
   AvailableBlockchainMarketplace,
   UserMarketplaceItem,
@@ -12,10 +14,9 @@ import { getBlockchainMarketplaces } from '@/useCases/getBlockchainMarketplaces'
 import { getUserMarketplaces } from '@/useCases/getUserMarketplaces'
 import type { InferGetServerSidePropsType, GetServerSideProps } from 'next'
 
-type Repo = {
+type Repo = ServerPageErrors & {
   blockchainMarketplaces?: AvailableBlockchainMarketplace[]
   userMarketplaces?: UserMarketplaceItem[]
-  errorMessage?: string
 }
 
 export const getServerSideProps: GetServerSideProps<{
@@ -45,7 +46,7 @@ export const getServerSideProps: GetServerSideProps<{
       },
     }
   } catch (e) {
-    return { props: { repo: { errorMessage: `${e}` } } }
+    return { props: { repo: captureServerPageError(e) } }
   }
 }
 
@@ -56,20 +57,36 @@ export default function Page({
 
   const hasMounted = useHasMounted()
 
+  if (repo.useCaseErrors) {
+    return (
+      <ErrorScreen error="Internal Server Error" errors={repo.useCaseErrors} />
+    )
+  }
+
   if (repo.errorMessage) {
-    return <p>{repo.errorMessage}</p>
+    return <ErrorScreen error="Error" description={repo.errorMessage} />
   }
 
-  if (typeof repo.blockchainMarketplaces === 'undefined') {
-    return <p>No blockchain marketplaces</p>
+  if (!Array.isArray(repo.blockchainMarketplaces)) {
+    return (
+      <ErrorScreen
+        error="Error"
+        description="Unable to load blockchain marketplaces"
+      />
+    )
   }
 
-  if (typeof repo.userMarketplaces === 'undefined') {
-    return <p>No user marketplaces</p>
+  if (!Array.isArray(repo.userMarketplaces)) {
+    return (
+      <ErrorScreen
+        error="Error"
+        description="Unable to load user marketplaces"
+      />
+    )
   }
 
   if (!hasMounted) {
-    return <p>Loading...</p>
+    return <LoadingScreen />
   }
 
   return (

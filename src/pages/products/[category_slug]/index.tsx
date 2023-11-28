@@ -1,6 +1,12 @@
 import React from 'react'
 import { useHasMounted } from '@/hooks'
-import { MarketplaceProductCategoryShowcase } from '@/screens/marketplace'
+import { captureServerPageError } from '@/lib/serverPageErrors'
+import type { ServerPageErrors } from '@/lib/serverPageErrors'
+import {
+  ErrorScreen,
+  LoadingScreen,
+  MarketplaceProductCategoryShowcase,
+} from '@/screens/marketplace'
 import type {
   ProductCategoryDetails,
   ProductItem,
@@ -8,10 +14,9 @@ import type {
 import { getProductsByCategoryForMarketplace } from '@/useCases/getProductsByCategoryForMarketplace'
 import type { InferGetServerSidePropsType, GetServerSideProps } from 'next'
 
-type Repo = {
+type Repo = ServerPageErrors & {
   category?: ProductCategoryDetails
   products?: ProductItem[]
-  errorMessage?: string
 }
 
 export const getServerSideProps: GetServerSideProps<{
@@ -30,7 +35,7 @@ export const getServerSideProps: GetServerSideProps<{
 
     return { props: { repo: { category, products } } }
   } catch (e) {
-    return { props: { repo: { errorMessage: `${e}` } } }
+    return { props: { repo: captureServerPageError(e) } }
   }
 }
 
@@ -39,20 +44,26 @@ export default function Page({
 }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const hasMounted = useHasMounted()
 
+  if (repo.useCaseErrors) {
+    return (
+      <ErrorScreen error="Internal Server Error" errors={repo.useCaseErrors} />
+    )
+  }
+
   if (repo.errorMessage) {
-    return <p>{repo.errorMessage}</p>
+    return <ErrorScreen error="Error" description={repo.errorMessage} />
   }
 
   if (!repo.category) {
-    return <p>Unable to get category details</p>
+    return <ErrorScreen error="Error" description="Unable to load category" />
   }
 
-  if (typeof repo.products === 'undefined') {
-    return <p>Unable to get category products</p>
+  if (!Array.isArray(repo.products)) {
+    return <ErrorScreen error="Error" description="Unable to load products" />
   }
 
   if (!hasMounted) {
-    return <p>Loading...</p>
+    return <LoadingScreen />
   }
 
   return (
