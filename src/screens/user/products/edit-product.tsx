@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useSession } from 'next-auth/react'
 import React, { useState } from 'react'
@@ -6,6 +7,7 @@ import { ErrorMessage } from '@/components'
 import { UserLayout } from '@/layouts'
 import { APIError } from '@/lib/api'
 import { products as ProductsAPI } from '@/lib/api/user/products'
+import { buildProductPageURL } from '@/lib/routes'
 import type {
   EditableProductDetails,
   ProductCategory,
@@ -97,7 +99,13 @@ const Screen = ({ product, tokens, productCategories }: Props) => {
 
   return (
     <UserLayout>
-      <Header as="h1" content={product.title} />
+      {session && (
+        <Header as="h1">
+          <Link href={buildProductPageURL(session.username, product.slug)}>
+            {product.title}
+          </Link>
+        </Header>
+      )}
 
       <Grid columns={1} stackable>
         {updateProductError && (
