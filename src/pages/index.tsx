@@ -1,8 +1,6 @@
 import Head from 'next/head'
 import React from 'react'
 import { LandingHomepageScreen } from '@/screens/landing'
-import { getIsSsrMobile } from '@/utils/get-is-ssr-mobile'
-import type { GetServerSidePropsContext } from 'next'
 
 export default function Page() {
   const description =
@@ -19,12 +17,4 @@ export default function Page() {
       <LandingHomepageScreen />
     </>
   )
-}
-
-export async function getServerSideProps(context: GetServerSidePropsContext) {
-  return {
-    props: {
-      isSsrMobile: getIsSsrMobile(context),
-    },
-  }
 }
