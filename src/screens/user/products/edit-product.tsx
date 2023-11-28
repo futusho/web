@@ -45,12 +45,16 @@ const Screen = ({ product, tokens, productCategories }: Props) => {
   const [updateProductValidationErrors, setUpdateProductValidationErrors] =
     useState<string[]>([])
 
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+
   const handleUpdateProduct = async (
     data: ValidationSchema,
     coverImagesToAdd: File[],
     thumbnailImagesToAdd: File[]
   ) => {
     if (!session?.userId) return
+
+    setIsSubmitting(true)
 
     try {
       setUpdateProductError('')
@@ -86,6 +90,8 @@ const Screen = ({ product, tokens, productCategories }: Props) => {
       } else {
         setUpdateProductError(`${e}`)
       }
+
+      setIsSubmitting(false)
     }
   }
 
@@ -119,6 +125,7 @@ const Screen = ({ product, tokens, productCategories }: Props) => {
             product={product}
             tokens={tokenOptions}
             productCategories={productCategoryOptions}
+            isSubmitting={isSubmitting}
             onFormSubmitted={(data, files1, files2) =>
               handleUpdateProduct(data, files1, files2)
             }

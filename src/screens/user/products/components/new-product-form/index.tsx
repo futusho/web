@@ -25,14 +25,20 @@ type Props = {
   tokens: SelectOption[]
   productCategories: SelectOption[]
   onFormSubmitted(_data: ValidationSchema): void
+  isSubmitting: boolean
 }
 
-const Component = ({ tokens, productCategories, onFormSubmitted }: Props) => {
+const Component = ({
+  tokens,
+  productCategories,
+  onFormSubmitted,
+  isSubmitting,
+}: Props) => {
   const {
     register,
     control,
     handleSubmit,
-    formState: { errors, isSubmitting, isValid },
+    formState: { errors, isValid },
     setValue,
     trigger,
   } = useForm<ValidationSchema>({
@@ -189,6 +195,7 @@ const Component = ({ tokens, productCategories, onFormSubmitted }: Props) => {
             primary
             content="Customize"
             disabled={isSubmitting || !isValid}
+            loading={isSubmitting}
           />
         </Grid.Column>
       </Grid>
