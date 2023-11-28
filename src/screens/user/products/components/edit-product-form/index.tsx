@@ -62,6 +62,7 @@ type Props = {
     _coverImagesToAdd: File[],
     _thumbnailImagesToAdd: File[]
   ): void
+  isSubmitting: boolean
 }
 
 const Component = ({
@@ -69,6 +70,7 @@ const Component = ({
   tokens,
   productCategories,
   onFormSubmitted,
+  isSubmitting,
 }: Props) => {
   const [productAttributes, setProductAttributes] = useState<
     ProductAttribute[]
@@ -78,7 +80,7 @@ const Component = ({
     register,
     control,
     handleSubmit,
-    formState: { errors, isSubmitting, isValid },
+    formState: { errors, isValid },
     setValue,
     trigger,
   } = useForm<ValidationSchema>({
@@ -790,6 +792,7 @@ const Component = ({
             size="large"
             content="Save"
             disabled={isSubmitting || !isValid}
+            loading={isSubmitting}
           />
         </Grid.Column>
       </Grid>

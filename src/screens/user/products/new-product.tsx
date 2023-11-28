@@ -43,8 +43,12 @@ export default function Screen({ tokens, productCategories }: Props) {
   const [createProductValidationErrors, setCreateProductValidationErrors] =
     useState<string[]>([])
 
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+
   const handleCreateProduct = async (data: ValidationSchema) => {
     if (!session?.userId) return
+
+    setIsSubmitting(true)
 
     try {
       setCreateProductError('')
@@ -70,6 +74,8 @@ export default function Screen({ tokens, productCategories }: Props) {
       } else {
         setCreateProductError(`${e}`)
       }
+
+      setIsSubmitting(false)
     }
   }
 
@@ -106,6 +112,7 @@ export default function Screen({ tokens, productCategories }: Props) {
                   tokens={tokenOptions}
                   productCategories={productCategoryOptions}
                   onFormSubmitted={(data) => handleCreateProduct(data)}
+                  isSubmitting={isSubmitting}
                 />
               ) : (
                 <>
