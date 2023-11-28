@@ -24,7 +24,7 @@ async function main() {
   const marketplaceOnBinance = await prisma.networkMarketplace.create({
     data: {
       networkId: binanceTestnet.id,
-      smartContractAddress: '0x86261aD1d50a509ce62AbC9A1034F0310B125801',
+      smartContractAddress: '0xF1C10984ba8b4af41fAec73FadA46D40dFB80dB4',
       commissionRate: 3,
     },
   })
