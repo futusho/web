@@ -63,7 +63,7 @@
     "@wagmi/cli": "^1.5.0",
     "cookie-parser": "^1.4.6",
     "dotenv-cli": "^7.3.0",
-    "eslint": "^8.40.0",
+    "eslint": "^8.55.0",
     "eslint-config-next": "^13.5.4",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-autofix": "^1.1.0",
